@@ -1,0 +1,220 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+use Elastica\Client;
+use Elastica\Document;
+use Elastica\Filter\Term as TermFilter;
+use Elastica\Query;
+use Elastica\Query\MatchAll as MatchAllQuery;
+use Elastica\Request;
+use Elastica\Type\Mapping;
+
+#elastic search test server
+require_once DOCUMENT_ROOT.'/elastica/vendor/autoload.php';
+class Process extends ES_Controller {
+
+    public function __construct() {
+        parent::__construct();        
+		$this->load->model('m_manage','manage', true);
+    }
+
+    public function index() {
+		print_r( $this->getGeoPoint($lat, $lon));
+    }
+
+    public function getGeoPoint($lat, $lon)
+    {
+		$location = new stdClass();
+		$location->lat = (float)$lat;
+		$location->lon = (float)$lon;
+		return $location;
+    }
+
+
+	public function createIndex(){
+
+		$client = $this->client();
+		$indexName	= $this->input->post('indexName');
+		$typeName	= $this->input->post('typeName');
+
+
+		$index = $client->getIndex($indexName);
+		$index->create(array(), true); //인덱스 새로 생성
+		$type = $index->getType($typeName);
+
+		/*
+		$index->close();
+		$indexSetting['index']['analysis']['analyzer']['korean']['type'] ="custom";
+		$indexSetting['index']['analysis']['analyzer']['korean']['tokenizer'] ="mecab_ko_standard_tokenizer";
+		$index->setSettings($indexSetting);
+		$index->open(); //인덱스 열기 
+		$data = $this->manage->getSearchData();
+		foreach($data as $val): 
+			$type->addDocument(new Document($val['no'], $val));
+		endforeach;
+		*/
+		header("location:/manage/setting");
+}
+
+	public function deleteIndex(){
+		$client = $this->client();
+		$indexName	= $this->input->post('indexName');
+		$index = $client->getIndex($indexName);
+		$index->delete();
+		header("location:/manage");
+	}
+
+
+
+	public function settingIndex(){
+		$client			= $this->client();
+		$indexName	= $this->input->post('indexName');
+		$typeName	= $this->input->post('typeName');
+		$index = $client->getIndex($indexName);
+
+		$index->close();
+
+		$indexSetting['index']['analysis']['analyzer']['korean']['type'] ="custom";
+		$indexSetting['index']['analysis']['analyzer']['korean']['tokenizer'] ="mecab_ko_standard_tokenizer";
+		$index->setSettings($indexSetting);
+
+        $type = $index->getType($typeName);
+		$mapping = new Mapping();
+
+		/*	
+		$mappingParam['name'] = "_boost";
+		$mappingParam['null_value'] = 1.0;
+        $mapping->setParam('_boost', $mappingParam);
+		*/	
+
+        $mapping->setParam('_boost', array('name' => '_boost', 'null_value' => 1.0));
+        $mapping->setProperties(array(
+			/*
+            'id' => array('type' => 'integer', 'include_in_all' => false),
+            'user' => array(
+                'type' => 'object',
+                'properties' => array(
+                    'name' => array('type' => 'string', 'include_in_all' => true),
+                    'fullName' => array('type' => 'string', 'include_in_all' => true),
+                ),
+            ),
+
+            'msg' => array('type' => 'string', 'include_in_all' => true),
+            'tstamp' => array('type' => 'date', 'include_in_all' => false),
+			*/
+
+			'name'		=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true),
+			'content'	=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true),
+		//	'title'			=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true),
+            'searchKeyword'	=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true),
+            'propertyKeyword'	=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true), //place
+            'roomsKeyword'		=> array('type' => 'string', 'analyzer' => 'korean', 'include_in_all' => true), //place
+            'location'				=> array('type' => 'geo_point', 'include_in_all' => true), //place
+            '_boost'					=> array('type' => 'float', 'include_in_all' => false),
+        ));
+
+        $type->setMapping($mapping);
+       // $index->refresh();
+		$index->open(); //인덱스 열기 
+		header("location:/manage/insert");
+	}
+
+#travel 정보 넣기
+	public function travelInsert(){
+			$client	= $this->client();
+			$index	= $client->getIndex($this->input->post('indexName'));
+			$type		= $index->getType($this->input->post('typeName'));
+			$data		= $this->manage->getTravelList();
+
+			foreach($data as $key=>$val): 
+				//$val['location']				= $this->getGeoPoint($val['lat'], $val['lon']);
+				$val['location']				= $this->getGeoPoint($val['latitude'], $val['longitude']);
+				$val['searchKeyword'] = $this->elastica->deduplication($val['searchKeyword']);	
+				print_r($val);
+				echo "<br>";
+			$type->addDocument(new Document($val['id'], $val));
+			endforeach;
+	}
+#travel 정보 넣기
+
+#cast 정보 넣기
+	public function castInsert(){
+			$client	= $this->client();
+			$index	= $client->getIndex($this->input->post('indexName'));
+			$type		= $index->getType($this->input->post('typeName'));
+			$data		= $this->manage->getCastList();
+
+			foreach($data as $key=>$val): 
+				$val['content'] = strip_tags($val['content']); 
+				$val['searchKeyword'] = $this->elastica->deduplication($val['searchKeyword']);	
+				$val['thumbNails'] = $this->elastica->image_deduplication($val['thumbNails']);	
+
+				print_r($val);
+				echo "<br>";
+
+			$type->addDocument(new Document($val['id'], $val));
+			endforeach;
+	}
+#cast 정보 넣기
+
+#사진정보 넣기
+	public function photoInsert(){
+			$client	= $this->client();
+			$index	= $client->getIndex($this->input->post('indexName'));
+			$type		= $index->getType($this->input->post('typeName'));
+			$data		= $this->manage->getPhotoList();
+
+			foreach($data as $key=>$val): 
+				$val['searchKeyword'] = $this->elastica->deduplication($val['searchKeyword']);	
+				print_r($val);
+				echo "<br>";
+			$type->addDocument(new Document($val['id'], $val));
+			endforeach;
+	}
+#사진정보 넣기
+
+#장소정보 넣기
+	public function stayInsert(){
+			$client	= $this->client();
+			$index	= $client->getIndex($this->input->post('indexName'));
+			$type		= $index->getType($this->input->post('typeName'));
+			$data		= $this->manage->getStayList();
+
+			foreach($data as $key=>$val): 
+				$val['location']				= $this->getGeoPoint($val['latitude'], $val['longitude']);
+				//$val['location']				= $this->getGeoPoint($val['lat'], $val['lon']);
+				$val['searchKeyword']	= $this->elastica->deduplication($val['searchKeyword']);	
+				$val['propertyKeyword']	= $this->elastica->deduplication($val['propertyKeyword']);	
+				$val['roomsKeyword']	= $this->elastica->deduplication($val['roomsKeyword']);	
+				print_r($val);
+				echo "<br>";
+			$type->addDocument(new Document($val['id'], $val));
+			endforeach;
+	}
+#장소정보 넣기
+
+	public function insert(){
+			$client = $this->client();
+			$indexName	= $this->input->post('indexName');
+			$typeName	= $this->input->post('typeName');
+			$index = $client->getIndex($indexName);
+			$type = $index->getType($typeName);
+			$data = $this->manage->getSearchData();
+			foreach($data as $val): 
+			/*
+			$doc = new Document();
+			$returnValue = $doc->addGeoPoint('point', 38.89859, -77.035971);
+			$this->assertInstanceOf('Elastica\Document', $returnValue);
+			*/
+			$val["location"] = new stdClass();
+			$val["location"]->lat = (float)$val["lat"];
+			$val["location"]->lon = (float)$val["lon"];
+//			echo getType($val["location"]);
+//			print_r($val);
+//			exit;
+			$type->addDocument(new Document($val['no'], $val));
+			endforeach;
+	}
+
+
+}

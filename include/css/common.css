@@ -1,0 +1,47 @@
+header {padding:10px; }
+header ul{padding:10px;}
+footer li,header nav li{ display:inline-block;	  background-color:#ccc; padding:10px; }
+footer, header, header li{ 	text-align:center; }
+h3 {  width:75%; margin:0 0 0 22%; padding: 10px 0 10px 5px;}
+section article table {width:75%; margin:0 auto;}
+input {width:100%; line-height:160%;}
+td{text-align:center;}
+
+nav {border:solid #000; width:75%; margin:10px auto; border-width:3px 1px 0 1px;}
+
+nav ul li {width:22%; height:30px;}
+nav li a {padding:10px 20px;}
+button {border:0; padding:5px; border-radius:3px; margin:5px 0;}
+
+#buttonArea {	width:75%; margin:0 auto; padding:10px; }
+
+#banner {width:80%; padding:10px 0px; margin:0 auto; }
+#banner ul{padding:10px 0;}
+#banner ul li{ display:inline-block; }
+#banner ul li a{background-color:#aaa; padding:10px 40px; border-radius:15px;}
+#banner ul li a:hover{background-color:#ccc; padding:10px 40px; border-radius:15px; color:#000;}
+
+#submit {padding:10px; width:95%; background-color:#008299; color:#fff;}
+
+.bgblue { background-color:#003399; color:#fff; padding:5px 4%;}
+.bgred { background-color:#5D0000; color:#fff; padding:5px 4%;}
+.bggreen{ background-color:#005000; color:#fff; padding:5px 4%;}
+.bgviolet { background-color:#2A0066; color:#fff; padding:5px 4%;}
+.bgblack{ background-color:#000000; color:#fff; padding:5px 4%;}
+
+#doo {float:right;}
+
+footer{ margin: 40px 0 0 0; border:dotted #ccc; border-width: 3px 0 0 0; padding:10px; width:75%; margin:20px auto;}
+footer table { border:solid #333; border-width:1px 1px 0 0; width:100%; }
+footer table td, footer table th{ border:solid #333; border-width: 0 0 1px 1px; height:40px; border-collapse:collapse; }
+footer table td button{ width:90%;}
+footer table th{font-weight:bold; background-color:#999; color:#fff;}
+
+nav table {  width:100%;}
+footer table td button, nav table td button{  width:95%;}
+
+#mainTable th{ text-align:center; font-weight:bold; background-color:#999; color:#fff;}
+#mainTable th, #mainTable td { padding:5px;}
+
+#filterArea input{ border:solid 1px blue; margin-top:2px;}
+#space { height:7px;}
